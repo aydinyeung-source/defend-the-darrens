@@ -18,8 +18,9 @@ const player = {
   coins:       100,
   gems:        0,
   wins:        0,
-  gender:      'prefer_not_to_say',
-  ownedTowers: new Set(),
+  gender:       'prefer_not_to_say',
+  ownedTowers:  new Set(),
+  ownedEnemies: new Set(),
 };
 
 // ── Rarity styles (used by tower grid cards and drop lists) ──────────────────
@@ -39,6 +40,10 @@ const ALL_TOWERS = {
     rarity: 'common', rarityLabel: 'Common',
   },
 };
+
+// ── Enemy registry ────────────────────────────────────────────────────────────
+// Add new enemies here as they're designed.
+const ALL_ENEMIES = {};
 
 // ── Crate definitions ─────────────────────────────────────────────────────────
 // drops: array of { towerId, weight }. Weight is relative — 100 total = percentages.
@@ -211,8 +216,10 @@ async function loadPlayer(id) {
   player.wins     = p.wins   || 0;
   player.gender   = p.gender || 'prefer_not_to_say';
 
-  const { data: towers } = await db.from('owned_towers').select('tower_id').eq('player_id', id);
-  player.ownedTowers = new Set((towers || []).map(r => r.tower_id));
+  const { data: towers }  = await db.from('owned_towers').select('tower_id').eq('player_id', id);
+  const { data: enemies } = await db.from('owned_enemies').select('enemy_id').eq('player_id', id);
+  player.ownedTowers  = new Set((towers  || []).map(r => r.tower_id));
+  player.ownedEnemies = new Set((enemies || []).map(r => r.enemy_id));
 
   document.getElementById('profile-btn').textContent = `😊 ${player.username}`;
   showScreen('selection-screen');
@@ -234,10 +241,10 @@ function updateCurrency() {
   renderShopTab(); // refresh button affordability
 }
 
-// ── Towers tab — shows only undiscovered towers ───────────────────────────────
-function renderTowersTab() {
-  const list    = document.getElementById('towers-list');
-  const unfound = Object.values(ALL_TOWERS).filter(t => !player.ownedTowers.has(t.id));
+// ── Towers & Enemies tab ─────────────────────────────────────────────────────
+function renderCollectionSection(listId, allItems, ownedSet, allFoundMsg) {
+  const list    = document.getElementById(listId);
+  const unfound = Object.values(allItems).filter(t => !ownedSet.has(t.id));
 
   if (unfound.length === 0) {
     list.style.display = 'flex';
@@ -245,7 +252,7 @@ function renderTowersTab() {
     list.innerHTML = `
       <div class="all-found">
         <div class="all-found-icon">🌟</div>
-        <p class="all-found-msg">All towers discovered!</p>
+        <p class="all-found-msg">${allFoundMsg}</p>
       </div>`;
     return;
   }
@@ -264,6 +271,11 @@ function renderTowersTab() {
         <div class="tcg-footer">${t.name}</div>
       </div>`;
   }).join('');
+}
+
+function renderTowersTab() {
+  renderCollectionSection('towers-list',  ALL_TOWERS,  player.ownedTowers,  'All towers discovered!');
+  renderCollectionSection('enemies-list', ALL_ENEMIES, player.ownedEnemies, 'All enemies discovered!');
 }
 
 // ── Shop tab ──────────────────────────────────────────────────────────────────
@@ -389,7 +401,8 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   player.coins       = 100;
   player.gems        = 0;
   player.wins        = 0;
-  player.ownedTowers = new Set();
+  player.ownedTowers  = new Set();
+  player.ownedEnemies = new Set();
   document.getElementById('settings-modal').classList.add('hidden');
   document.getElementById('profile-btn').textContent = '😊 Profile';
   document.getElementById('auth-username').value = '';

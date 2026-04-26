@@ -591,6 +591,8 @@ html, body {
   overflow-y: auto;
 }
 
+.pane-title-gap { margin-top: 8px; }
+
 #towers-list {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
