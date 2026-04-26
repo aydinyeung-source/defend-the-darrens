@@ -241,31 +241,33 @@ function updateCurrency() {
   renderShopTab(); // refresh button affordability
 }
 
-// ── Towers & Enemies tab ─────────────────────────────────────────────────────
-function renderCollectionSection(listId, allItems, ownedSet, allFoundMsg) {
-  const list    = document.getElementById(listId);
-  const unfound = Object.values(allItems).filter(t => !ownedSet.has(t.id));
+// ── Collection tab ────────────────────────────────────────────────────────────
+let collectionMode = 'towers';
 
-  if (unfound.length === 0) {
-    list.style.display = 'flex';
-    list.style.flexDirection = 'column';
-    list.innerHTML = `
-      <div class="all-found">
-        <div class="all-found-icon">🌟</div>
-        <p class="all-found-msg">${allFoundMsg}</p>
+function renderTowersTab() {
+  const grid    = document.getElementById('collection-grid');
+  const allItems = collectionMode === 'towers' ? ALL_TOWERS : ALL_ENEMIES;
+  const owned    = collectionMode === 'towers' ? player.ownedTowers : player.ownedEnemies;
+  const items    = Object.values(allItems);
+  const label    = collectionMode === 'towers' ? 'towers' : 'enemies';
+
+  if (items.length === 0) {
+    grid.innerHTML = `
+      <div class="col-empty">
+        <div class="col-empty-icon">${collectionMode === 'towers' ? '🗼' : '👾'}</div>
+        <p class="col-empty-msg">No ${label} available yet.</p>
       </div>`;
     return;
   }
 
-  list.style.display = '';
-  list.style.flexDirection = '';
-  list.innerHTML = unfound.map(t => {
-    const rs = RARITY_STYLES[t.rarity] || RARITY_STYLES.common;
+  grid.innerHTML = items.map(t => {
+    const rs      = RARITY_STYLES[t.rarity] || RARITY_STYLES.common;
+    const isOwned = owned.has(t.id);
     return `
-      <div class="tcg" style="--rarity-bg:${rs.bg}; --rarity-border:${rs.border}">
+      <div class="tcg${isOwned ? ' tcg-owned' : ''}" style="--rarity-bg:${rs.bg}; --rarity-border:${rs.border}">
         <div class="tcg-face">
           <span class="tcg-icon">${t.icon}</span>
-          <span class="tcg-lock">🔒</span>
+          ${!isOwned ? '<span class="tcg-lock">🔒</span>' : ''}
           <div class="tcg-rarity-strip">${t.rarityLabel}</div>
         </div>
         <div class="tcg-footer">${t.name}</div>
@@ -273,10 +275,13 @@ function renderCollectionSection(listId, allItems, ownedSet, allFoundMsg) {
   }).join('');
 }
 
-function renderTowersTab() {
-  renderCollectionSection('towers-list',  ALL_TOWERS,  player.ownedTowers,  'All towers discovered!');
-  renderCollectionSection('enemies-list', ALL_ENEMIES, player.ownedEnemies, 'All enemies discovered!');
-}
+document.querySelectorAll('.pane-tab').forEach(btn =>
+  btn.addEventListener('click', () => {
+    collectionMode = btn.dataset.col;
+    document.querySelectorAll('.pane-tab').forEach(b => b.classList.toggle('active', b === btn));
+    renderTowersTab();
+  })
+);
 
 // ── Shop tab ──────────────────────────────────────────────────────────────────
 function renderShopTab() {

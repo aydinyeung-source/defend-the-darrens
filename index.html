@@ -70,10 +70,14 @@
     <main id="sel-main">
 
       <div class="sel-pane" id="pane-towers">
-        <h2 class="pane-title">Towers</h2>
-        <div id="towers-list"></div>
-        <h2 class="pane-title pane-title-gap">Enemies</h2>
-        <div id="enemies-list"></div>
+        <div class="col-header">
+          <h2 class="pane-title">Collection</h2>
+          <div class="pane-toggle">
+            <button class="pane-tab active" data-col="towers">🗼 Towers</button>
+            <button class="pane-tab" data-col="enemies">👾 Enemies</button>
+          </div>
+        </div>
+        <div id="collection-grid"></div>
       </div>
 
       <div class="sel-pane active" id="pane-play">
@@ -146,7 +150,7 @@
       <h2 class="settings-title">⚙️ Settings</h2>
       <button id="logout-btn" class="settings-row danger">🚪 Log Out</button>
       <button id="settings-close" class="settings-close-btn">Cancel</button>
-      <p class="settings-version">v1.3.0</p>
+      <p class="settings-version">v1.4.0</p>
     </div>
   </div>
 
