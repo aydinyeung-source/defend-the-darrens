@@ -1,5 +1,10 @@
 'use strict';
 
+// ── Supabase ──────────────────────────────────────────────────────────────────
+const SUPABASE_URL = 'https://vpgwqzwalyozpckvrgkq.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZwZ3dxendhbHlvenBja3ZyZ2txIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcxNTUyNDcsImV4cCI6MjA5MjczMTI0N30.93h-eC2uX7JlLGeq9n_2kt9r9ZXKn1NePfkErHnUA90';
+const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 // ── Screen management ─────────────────────────────────────────────────────────
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
@@ -13,12 +18,21 @@ const player = {
   ownedTowers: new Set(),
 };
 
+// ── Rarity styles (used by tower grid cards and drop lists) ──────────────────
+const RARITY_STYLES = {
+  common:    { bg: '#4a6572', border: '#78909c', text: '#b0bec5' },
+  uncommon:  { bg: '#2d5a27', border: '#4caf50', text: '#a5d6a7' },
+  rare:      { bg: '#1a3a6b', border: '#2196f3', text: '#90caf9' },
+  epic:      { bg: '#4a1570', border: '#9c27b0', text: '#ce93d8' },
+  legendary: { bg: '#7a2800', border: '#ff6d00', text: '#ffcc80' },
+};
+
 // ── Tower registry ────────────────────────────────────────────────────────────
 // Add new towers here as they're designed.
 const ALL_TOWERS = {
   basic: {
     id: 'basic', name: 'Basic', icon: '🗼',
-    rarity: 'common', rarityLabel: 'Common', rarityColor: '#868e96',
+    rarity: 'common', rarityLabel: 'Common',
   },
 };
 
@@ -53,6 +67,8 @@ function renderTowersTab() {
   const unfound = Object.values(ALL_TOWERS).filter(t => !player.ownedTowers.has(t.id));
 
   if (unfound.length === 0) {
+    list.style.display = 'flex';
+    list.style.flexDirection = 'column';
     list.innerHTML = `
       <div class="all-found">
         <div class="all-found-icon">🌟</div>
@@ -61,15 +77,20 @@ function renderTowersTab() {
     return;
   }
 
-  list.innerHTML = unfound.map(t => `
-    <div class="tower-card">
-      <div class="tc-icon">${t.icon}</div>
-      <div class="tc-info">
-        <span class="tc-name">${t.name}</span>
-        <span class="tc-rarity" style="color:${t.rarityColor}">${t.rarityLabel}</span>
-      </div>
-      <span class="tc-lock">🔒</span>
-    </div>`).join('');
+  list.style.display = '';
+  list.style.flexDirection = '';
+  list.innerHTML = unfound.map(t => {
+    const rs = RARITY_STYLES[t.rarity] || RARITY_STYLES.common;
+    return `
+      <div class="tcg" style="--rarity-bg:${rs.bg}; --rarity-border:${rs.border}">
+        <div class="tcg-face">
+          <span class="tcg-icon">${t.icon}</span>
+          <span class="tcg-lock">🔒</span>
+          <div class="tcg-rarity-strip">${t.rarityLabel}</div>
+        </div>
+        <div class="tcg-footer">${t.name}</div>
+      </div>`;
+  }).join('');
 }
 
 // ── Shop tab ──────────────────────────────────────────────────────────────────
@@ -80,8 +101,9 @@ function renderShopTab() {
     const totalW    = crate.drops.reduce((s, d) => s + d.weight, 0);
     const dropsHtml = crate.drops.map(d => {
       const t   = ALL_TOWERS[d.towerId];
+      const rs  = RARITY_STYLES[t.rarity] || RARITY_STYLES.common;
       const pct = Math.round(d.weight / totalW * 100);
-      return `<div class="drop-row">${t.icon} ${t.name} · <b>${pct}%</b></div>`;
+      return `<div class="drop-row">${t.icon} ${t.name} · <b style="color:${rs.border}">${pct}%</b></div>`;
     }).join('');
 
     const canAfford  = crate.currency === 'coins' ? player.coins >= crate.cost : player.gems >= crate.cost;
@@ -138,11 +160,13 @@ document.getElementById('shop-list').addEventListener('click', e => {
 
 // ── Crate result modal ────────────────────────────────────────────────────────
 function showCrateResult(tower) {
-  document.getElementById('result-icon').textContent   = tower.icon;
-  document.getElementById('result-name').textContent   = tower.name;
+  const rs = RARITY_STYLES[tower.rarity] || RARITY_STYLES.common;
+  document.getElementById('result-icon').textContent = tower.icon;
+  document.getElementById('result-name').textContent = tower.name;
   const rar = document.getElementById('result-rarity');
-  rar.textContent   = tower.rarityLabel;
-  rar.style.color   = tower.rarityColor;
+  rar.textContent      = tower.rarityLabel;
+  rar.style.color      = rs.border;
+  rar.style.background = rs.bg + '33';
   document.getElementById('crate-result').classList.remove('hidden');
 }
 
