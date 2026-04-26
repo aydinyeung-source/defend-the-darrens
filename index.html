@@ -4,12 +4,55 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Defend the Darrens</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+  <!-- ══ Login Screen ══════════════════════════════════════════════ -->
+  <div id="login-screen" class="screen game-bg">
+    <div class="cloud cloud-a"></div>
+    <div class="cloud cloud-b"></div>
+    <div class="cloud cloud-c"></div>
+
+    <div id="login-wrap">
+      <div id="login-hero">🏰</div>
+      <h1 id="login-title">Defend the Darrens</h1>
+
+      <div class="login-card" id="login-new">
+        <h2 class="login-card-title">New Player</h2>
+        <p class="login-card-sub">Pick a username and get your ID</p>
+        <input id="new-username" class="login-input" type="text" maxlength="20" placeholder="Enter username…" autocomplete="off" spellcheck="false">
+        <button id="create-btn" class="login-btn">Create Account</button>
+      </div>
+
+      <div class="login-divider">or</div>
+
+      <div class="login-card" id="login-returning">
+        <h2 class="login-card-title">Returning Player</h2>
+        <p class="login-card-sub">Sign in with your player ID</p>
+        <input id="return-id" class="login-input" type="text" maxlength="11" placeholder="#XXXXXXXXXX" autocomplete="off" spellcheck="false">
+        <button id="signin-btn" class="login-btn login-btn-blue">Sign In</button>
+        <p id="signin-error" class="login-error hidden">Player ID not found.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- New-ID reveal modal -->
+  <div id="new-id-modal" class="hidden">
+    <div id="new-id-box">
+      <p id="nid-welcome"></p>
+      <p class="nid-label">Your Player ID</p>
+      <div id="nid-id"></div>
+      <p class="nid-warn">⚠️ Save this ID — it's the only way to log back in!</p>
+      <button id="nid-copy">📋 Copy ID</button>
+      <button id="nid-go" class="login-btn">Let's Go!</button>
+    </div>
+  </div>
+
   <!-- ══ Selection Screen ══════════════════════════════════════════ -->
-  <div id="selection-screen" class="screen">
+  <div id="selection-screen" class="screen hidden game-bg">
 
     <div class="cloud cloud-a"></div>
     <div class="cloud cloud-b"></div>
@@ -93,6 +136,37 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Settings modal -->
+  <div id="settings-modal" class="hidden">
+    <div id="settings-box">
+      <h2 class="settings-title">⚙️ Settings</h2>
+      <button id="logout-btn" class="settings-row danger">🚪 Log Out</button>
+      <button id="settings-close" class="settings-close-btn">Cancel</button>
+      <p class="settings-version">v0.1.0</p>
+    </div>
+  </div>
+
+  <!-- Profile modal -->
+  <div id="profile-modal" class="hidden">
+    <div id="profile-box">
+      <div id="profile-avatar">😊</div>
+      <h2 id="profile-username"></h2>
+      <p id="profile-playerid"></p>
+      <div class="profile-stats">
+        <div class="profile-stat">
+          <div class="profile-stat-val" id="profile-wins">0</div>
+          <div class="profile-stat-label">Lifetime Wins</div>
+        </div>
+        <div class="profile-stat-divider"></div>
+        <div class="profile-stat">
+          <div class="profile-stat-val" id="profile-cards"></div>
+          <div class="profile-stat-label">Cards Found</div>
+        </div>
+      </div>
+      <button id="profile-close" class="login-btn">Close</button>
+    </div>
   </div>
 
   <!-- Crate result modal -->

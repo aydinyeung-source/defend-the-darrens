@@ -13,8 +13,11 @@ function showScreen(id) {
 
 // ── Player state ──────────────────────────────────────────────────────────────
 const player = {
-  coins: 100,
-  gems:  0,
+  id:          null,
+  username:    null,
+  coins:       100,
+  gems:        0,
+  wins:        0,
   ownedTowers: new Set(),
 };
 
@@ -46,13 +49,133 @@ const CRATES = [
     icon: '📦',
     cost: 100,
     currency: 'coins',
-    bg: 'linear-gradient(135deg, #fff9db 0%, #ffe8cc 100%)',
+    bg: 'linear-gradient(135deg, #2a1e00 0%, #1c1400 100%)',
     border: '#ffd43b',
     drops: [
       { towerId: 'basic', weight: 100 },
     ],
   },
 ];
+
+// ── Login / account ───────────────────────────────────────────────────────────
+const PLAYER_ID_KEY = 'dtd_player_id';
+const ID_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+function generatePlayerId() {
+  let id = '#';
+  for (let i = 0; i < 10; i++) id += ID_CHARS[Math.floor(Math.random() * ID_CHARS.length)];
+  return id;
+}
+
+async function createAccount() {
+  const username = document.getElementById('new-username').value.trim();
+  if (!username) return;
+
+  const btn = document.getElementById('create-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creating…';
+
+  let playerId, attempts = 0;
+  while (attempts < 10) {
+    playerId = generatePlayerId();
+    const { data } = await db.from('players').select('player_id').eq('player_id', playerId).maybeSingle();
+    if (!data) break;
+    attempts++;
+  }
+
+  const { error } = await db.from('players').insert({ player_id: playerId, username, coins: 100, gems: 0 });
+  if (error) {
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+    return;
+  }
+
+  localStorage.setItem(PLAYER_ID_KEY, playerId);
+  showNewIdModal(playerId, username);
+
+  btn.disabled = false;
+  btn.textContent = 'Create Account';
+}
+
+function showNewIdModal(id, username) {
+  document.getElementById('nid-welcome').textContent = `Welcome, ${username}! 🎉`;
+  document.getElementById('nid-id').textContent = id;
+  document.getElementById('new-id-modal').classList.remove('hidden');
+}
+
+document.getElementById('nid-copy').addEventListener('click', () => {
+  navigator.clipboard.writeText(document.getElementById('nid-id').textContent).catch(() => {});
+  document.getElementById('nid-copy').textContent = '✅ Copied!';
+  setTimeout(() => { document.getElementById('nid-copy').textContent = '📋 Copy ID'; }, 2000);
+});
+
+document.getElementById('nid-go').addEventListener('click', () => {
+  document.getElementById('new-id-modal').classList.add('hidden');
+  loadPlayer(localStorage.getItem(PLAYER_ID_KEY));
+});
+
+async function signIn() {
+  const raw = document.getElementById('return-id').value.trim().toUpperCase();
+  const id  = raw.startsWith('#') ? raw : '#' + raw;
+  const err = document.getElementById('signin-error');
+  err.classList.add('hidden');
+
+  const btn = document.getElementById('signin-btn');
+  btn.disabled = true;
+  btn.textContent = 'Signing in…';
+
+  const { data, error } = await db.from('players').select('*').eq('player_id', id).maybeSingle();
+
+  btn.disabled = false;
+  btn.textContent = 'Sign In';
+
+  if (error || !data) {
+    err.classList.remove('hidden');
+    return;
+  }
+
+  localStorage.setItem(PLAYER_ID_KEY, id);
+  loadPlayer(id);
+}
+
+async function loadPlayer(id) {
+  const { data: p } = await db.from('players').select('*').eq('player_id', id).maybeSingle();
+  if (!p) { localStorage.removeItem(PLAYER_ID_KEY); return; }
+
+  player.id       = p.player_id;
+  player.username = p.username;
+  player.coins    = p.coins;
+  player.gems     = p.gems;
+  player.wins     = p.wins || 0;
+
+  const { data: towers } = await db.from('owned_towers').select('tower_id').eq('player_id', id);
+  player.ownedTowers = new Set((towers || []).map(r => r.tower_id));
+
+  document.getElementById('profile-btn').textContent = `😊 ${player.username}`;
+  showScreen('selection-screen');
+  updateCurrency();
+  renderTowersTab();
+  renderShopTab();
+}
+
+document.getElementById('create-btn').addEventListener('click', createAccount);
+document.getElementById('signin-btn').addEventListener('click', signIn);
+
+document.getElementById('new-username').addEventListener('keydown', e => {
+  if (e.key === 'Enter') createAccount();
+});
+document.getElementById('return-id').addEventListener('keydown', e => {
+  if (e.key === 'Enter') signIn();
+});
+
+async function init() {
+  const saved = localStorage.getItem(PLAYER_ID_KEY);
+  if (saved) {
+    await loadPlayer(saved);
+  } else {
+    showScreen('login-screen');
+  }
+}
 
 // ── Currency display ──────────────────────────────────────────────────────────
 function updateCurrency() {
@@ -136,7 +259,7 @@ function rollCrate(crate) {
   return crate.drops[crate.drops.length - 1].towerId;
 }
 
-function openCrate(crateId) {
+async function openCrate(crateId) {
   const crate = CRATES.find(c => c.id === crateId);
   if (!crate) return;
   if (crate.currency === 'coins' && player.coins < crate.cost) return;
@@ -147,6 +270,14 @@ function openCrate(crateId) {
 
   const towerId = rollCrate(crate);
   player.ownedTowers.add(towerId);
+
+  if (player.id) {
+    const coinField = crate.currency === 'coins' ? { coins: player.coins } : { gems: player.gems };
+    await Promise.all([
+      db.from('players').update(coinField).eq('player_id', player.id),
+      db.from('owned_towers').upsert({ player_id: player.id, tower_id: towerId }),
+    ]);
+  }
 
   updateCurrency();
   renderTowersTab();
@@ -186,10 +317,61 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
   });
 });
 
-// ── Initial render ────────────────────────────────────────────────────────────
-updateCurrency();
-renderTowersTab();
-renderShopTab();
+// ── Settings modal ────────────────────────────────────────────────────────────
+document.getElementById('settings-btn').addEventListener('click', () => {
+  document.getElementById('settings-modal').classList.remove('hidden');
+});
+
+document.getElementById('settings-close').addEventListener('click', () => {
+  document.getElementById('settings-modal').classList.add('hidden');
+});
+
+document.getElementById('settings-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('settings-modal')) {
+    document.getElementById('settings-modal').classList.add('hidden');
+  }
+});
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  localStorage.removeItem(PLAYER_ID_KEY);
+  player.id          = null;
+  player.username    = null;
+  player.coins       = 100;
+  player.gems        = 0;
+  player.wins        = 0;
+  player.ownedTowers = new Set();
+  document.getElementById('settings-modal').classList.add('hidden');
+  document.getElementById('profile-btn').textContent = '😊 Profile';
+  showScreen('login-screen');
+  document.getElementById('new-username').value = '';
+  document.getElementById('return-id').value    = '';
+  document.getElementById('signin-error').classList.add('hidden');
+});
+
+// ── Profile modal ─────────────────────────────────────────────────────────────
+document.getElementById('profile-btn').addEventListener('click', () => {
+  if (!player.id) return;
+  const total = Object.keys(ALL_TOWERS).length;
+  const found = player.ownedTowers.size;
+  document.getElementById('profile-username').textContent = player.username;
+  document.getElementById('profile-playerid').textContent = player.id;
+  document.getElementById('profile-wins').textContent     = player.wins;
+  document.getElementById('profile-cards').textContent    = `${found}/${total}`;
+  document.getElementById('profile-modal').classList.remove('hidden');
+});
+
+document.getElementById('profile-close').addEventListener('click', () => {
+  document.getElementById('profile-modal').classList.add('hidden');
+});
+
+document.getElementById('profile-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('profile-modal')) {
+    document.getElementById('profile-modal').classList.add('hidden');
+  }
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+init();
 
 // ── Play button → game screen ─────────────────────────────────────────────────
 let gameLoopStarted = false;
