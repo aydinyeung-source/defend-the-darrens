@@ -175,6 +175,31 @@ html, body {
 .login-btn:active { transform: translateY(4px);  box-shadow: 0 1px 0 #b86d00; }
 .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
+/* ── Password show/hide ── */
+.pw-wrap {
+  position: relative;
+  width: 100%;
+}
+.pw-wrap .login-input {
+  padding-right: 46px;
+}
+.pw-eye {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.05rem;
+  color: rgba(255,255,255,0.3);
+  padding: 4px 2px;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.pw-eye:hover { color: rgba(255,255,255,0.75); }
+.pw-eye.visible { color: #ffd43b; }
+
 .login-error {
   font-size: 0.8rem;
   font-weight: 700;

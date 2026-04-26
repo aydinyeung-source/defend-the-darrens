@@ -80,7 +80,7 @@ function setAuthMode(mode) {
   authMode = mode;
   const isSignup = mode === 'signup';
   document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
-  document.getElementById('auth-confirm').classList.toggle('hidden', !isSignup);
+  document.getElementById('auth-confirm-wrap').classList.toggle('hidden', !isSignup);
   document.getElementById('gender-select').classList.toggle('hidden', !isSignup);
   document.getElementById('auth-submit').textContent = isSignup ? 'Create Account' : 'Log In';
   document.getElementById('auth-error').classList.add('hidden');
@@ -145,7 +145,7 @@ async function createAccount() {
   });
 
   if (error) {
-    showAuthError('Something went wrong. Try again.');
+    showAuthError(error.message || 'Something went wrong. Try again.');
     btn.disabled = false;
     btn.textContent = 'Create Account';
     return;
@@ -190,6 +190,15 @@ document.getElementById('auth-submit').addEventListener('click', () => {
     if (e.key === 'Enter') document.getElementById('auth-submit').click();
   })
 );
+
+document.getElementById('auth-card').addEventListener('click', e => {
+  const eye = e.target.closest('.pw-eye');
+  if (!eye) return;
+  const input = document.getElementById(eye.dataset.target);
+  const show  = input.type === 'password';
+  input.type  = show ? 'text' : 'password';
+  eye.classList.toggle('visible', show);
+});
 
 async function loadPlayer(id) {
   const { data: p } = await db.from('players').select('*').eq('player_id', id).maybeSingle();
@@ -386,6 +395,8 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   document.getElementById('auth-username').value = '';
   document.getElementById('auth-password').value = '';
   document.getElementById('auth-confirm').value  = '';
+  document.querySelectorAll('.pw-eye').forEach(e => { e.classList.remove('visible'); });
+  document.querySelectorAll('#auth-card input[type="text"]').forEach(i => { i.type = 'password'; });
   setAuthMode('login');
   showScreen('login-screen');
 });
