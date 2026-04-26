@@ -33,21 +33,31 @@ const RARITY_STYLES = {
 };
 
 // ── Tower registry ────────────────────────────────────────────────────────────
-// Add new towers here as they're designed.
 const ALL_TOWERS = {
-  basic: {
-    id: 'basic', name: 'Basic', icon: '🗼',
-    rarity: 'common', rarityLabel: 'Common',
-  },
+  basic:     { id: 'basic',     name: 'Basic',     icon: '🗼', rarity: 'common',    rarityLabel: 'Common'    },
+  archer:    { id: 'archer',    name: 'Archer',    icon: '🏹', rarity: 'common',    rarityLabel: 'Common'    },
+  cannon:    { id: 'cannon',    name: 'Cannon',    icon: '💣', rarity: 'uncommon',  rarityLabel: 'Uncommon'  },
+  ice:       { id: 'ice',       name: 'Ice',       icon: '❄️', rarity: 'rare',      rarityLabel: 'Rare'      },
+  lightning: { id: 'lightning', name: 'Lightning', icon: '⚡', rarity: 'epic',      rarityLabel: 'Epic'      },
+  dragon:    { id: 'dragon',    name: 'Dragon',    icon: '🐉', rarity: 'legendary', rarityLabel: 'Legendary' },
 };
 
 // ── Enemy registry ────────────────────────────────────────────────────────────
-// Add new enemies here as they're designed.
-const ALL_ENEMIES = {};
+const ALL_ENEMIES = {
+  goblin:  { id: 'goblin',  name: 'Goblin',  icon: '👺', rarity: 'common',    rarityLabel: 'Common'    },
+  knight:  { id: 'knight',  name: 'Knight',  icon: '⚔️', rarity: 'common',    rarityLabel: 'Common'    },
+  witch:   { id: 'witch',   name: 'Witch',   icon: '🧙', rarity: 'uncommon',  rarityLabel: 'Uncommon'  },
+  giant:   { id: 'giant',   name: 'Giant',   icon: '🦣', rarity: 'rare',      rarityLabel: 'Rare'      },
+  wizard:  { id: 'wizard',  name: 'Wizard',  icon: '🔮', rarity: 'epic',      rarityLabel: 'Epic'      },
+  wyvern:  { id: 'wyvern',  name: 'Wyvern',  icon: '🐲', rarity: 'legendary', rarityLabel: 'Legendary' },
+};
+
+// ── Starter cards (given to every new player) ─────────────────────────────────
+const STARTER_TOWERS  = ['basic', 'archer'];
+const STARTER_ENEMIES = ['goblin', 'knight'];
 
 // ── Crate definitions ─────────────────────────────────────────────────────────
-// drops: array of { towerId, weight }. Weight is relative — 100 total = percentages.
-// Add new crates here; costs/contents defined by you later.
+// drops: array of { type: 'tower'|'enemy', id, weight }
 const CRATES = [
   {
     id: 'basic-crate',
@@ -58,7 +68,48 @@ const CRATES = [
     bg: 'linear-gradient(135deg, #2a1e00 0%, #1c1400 100%)',
     border: '#ffd43b',
     drops: [
-      { towerId: 'basic', weight: 100 },
+      { type: 'tower', id: 'basic',  weight: 25 },
+      { type: 'tower', id: 'archer', weight: 25 },
+      { type: 'enemy', id: 'goblin', weight: 25 },
+      { type: 'enemy', id: 'knight', weight: 25 },
+    ],
+  },
+  {
+    id: 'battle-crate',
+    name: 'Battle Crate',
+    icon: '⚔️',
+    cost: 500,
+    currency: 'coins',
+    bg: 'linear-gradient(135deg, #001828 0%, #002a40 100%)',
+    border: '#339af0',
+    drops: [
+      { type: 'tower', id: 'cannon', weight: 22 },
+      { type: 'enemy', id: 'witch',  weight: 22 },
+      { type: 'tower', id: 'ice',    weight: 12 },
+      { type: 'enemy', id: 'giant',  weight: 12 },
+      { type: 'tower', id: 'basic',  weight: 12 },
+      { type: 'tower', id: 'archer', weight: 10 },
+      { type: 'enemy', id: 'goblin', weight: 6  },
+      { type: 'enemy', id: 'knight', weight: 4  },
+    ],
+  },
+  {
+    id: 'royal-crate',
+    name: 'Royal Crate',
+    icon: '👑',
+    cost: 50,
+    currency: 'gems',
+    bg: 'linear-gradient(135deg, #1a0028 0%, #2a003a 100%)',
+    border: '#cc5de8',
+    drops: [
+      { type: 'tower', id: 'lightning', weight: 18 },
+      { type: 'enemy', id: 'wizard',    weight: 18 },
+      { type: 'tower', id: 'dragon',    weight: 7  },
+      { type: 'enemy', id: 'wyvern',    weight: 7  },
+      { type: 'tower', id: 'ice',       weight: 18 },
+      { type: 'enemy', id: 'giant',     weight: 18 },
+      { type: 'tower', id: 'cannon',    weight: 7  },
+      { type: 'enemy', id: 'witch',     weight: 7  },
     ],
   },
 ];
@@ -155,6 +206,11 @@ async function createAccount() {
     btn.textContent = 'Create Account';
     return;
   }
+
+  await Promise.all([
+    db.from('owned_towers').insert(STARTER_TOWERS.map(id  => ({ player_id: playerId, tower_id: id }))),
+    db.from('owned_enemies').insert(STARTER_ENEMIES.map(id => ({ player_id: playerId, enemy_id: id }))),
+  ]);
 
   localStorage.setItem(PLAYER_ID_KEY, playerId);
   await loadPlayer(playerId);
@@ -290,7 +346,8 @@ function renderShopTab() {
   list.innerHTML = CRATES.map(crate => {
     const totalW    = crate.drops.reduce((s, d) => s + d.weight, 0);
     const dropsHtml = crate.drops.map(d => {
-      const t   = ALL_TOWERS[d.towerId];
+      const t   = d.type === 'enemy' ? ALL_ENEMIES[d.id] : ALL_TOWERS[d.id];
+      if (!t) return '';
       const rs  = RARITY_STYLES[t.rarity] || RARITY_STYLES.common;
       const pct = Math.round(d.weight / totalW * 100);
       return `<div class="drop-row">${t.icon} ${t.name} · <b style="color:${rs.border}">${pct}%</b></div>`;
@@ -318,12 +375,12 @@ function renderShopTab() {
 // ── Crate opening logic ───────────────────────────────────────────────────────
 function rollCrate(crate) {
   const total = crate.drops.reduce((s, d) => s + d.weight, 0);
-  let roll    = Math.random() * total;
+  let roll = Math.random() * total;
   for (const drop of crate.drops) {
     roll -= drop.weight;
-    if (roll <= 0) return drop.towerId;
+    if (roll <= 0) return drop;
   }
-  return crate.drops[crate.drops.length - 1].towerId;
+  return crate.drops[crate.drops.length - 1];
 }
 
 async function openCrate(crateId) {
@@ -335,20 +392,26 @@ async function openCrate(crateId) {
   if (crate.currency === 'coins') player.coins -= crate.cost;
   else                             player.gems  -= crate.cost;
 
-  const towerId = rollCrate(crate);
-  player.ownedTowers.add(towerId);
+  const drop    = rollCrate(crate);
+  const isEnemy = drop.type === 'enemy';
+  const item    = isEnemy ? ALL_ENEMIES[drop.id] : ALL_TOWERS[drop.id];
+
+  if (isEnemy) player.ownedEnemies.add(drop.id);
+  else         player.ownedTowers.add(drop.id);
 
   if (player.id) {
-    const coinField = crate.currency === 'coins' ? { coins: player.coins } : { gems: player.gems };
+    const currencyUpdate = crate.currency === 'coins' ? { coins: player.coins } : { gems: player.gems };
+    const table = isEnemy ? 'owned_enemies' : 'owned_towers';
+    const field = isEnemy ? 'enemy_id'      : 'tower_id';
     await Promise.all([
-      db.from('players').update(coinField).eq('player_id', player.id),
-      db.from('owned_towers').upsert({ player_id: player.id, tower_id: towerId }),
+      db.from('players').update(currencyUpdate).eq('player_id', player.id),
+      db.from(table).upsert({ player_id: player.id, [field]: drop.id }),
     ]);
   }
 
   updateCurrency();
   renderTowersTab();
-  showCrateResult(ALL_TOWERS[towerId]);
+  showCrateResult(item);
 }
 
 document.getElementById('shop-list').addEventListener('click', e => {
@@ -422,8 +485,8 @@ document.getElementById('logout-btn').addEventListener('click', () => {
 // ── Profile modal ─────────────────────────────────────────────────────────────
 document.getElementById('profile-btn').addEventListener('click', () => {
   if (!player.id) return;
-  const total = Object.keys(ALL_TOWERS).length;
-  const found = player.ownedTowers.size;
+  const total = Object.keys(ALL_TOWERS).length + Object.keys(ALL_ENEMIES).length;
+  const found = player.ownedTowers.size + player.ownedEnemies.size;
   document.getElementById('profile-username').textContent = player.username;
   document.getElementById('profile-playerid').textContent = player.id;
   document.getElementById('profile-wins').textContent     = player.wins;
