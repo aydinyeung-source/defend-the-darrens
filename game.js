@@ -18,6 +18,7 @@ const player = {
   coins:       100,
   gems:        0,
   wins:        0,
+  gender:      'prefer_not_to_say',
   ownedTowers: new Set(),
 };
 
@@ -67,13 +68,64 @@ function generatePlayerId() {
   return id;
 }
 
-async function createAccount() {
-  const username = document.getElementById('new-username').value.trim();
-  if (!username) return;
+async function hashPassword(pw) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
-  const btn = document.getElementById('create-btn');
+let authMode       = 'login';
+let selectedGender = 'prefer_not_to_say';
+
+function setAuthMode(mode) {
+  authMode = mode;
+  const isSignup = mode === 'signup';
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  document.getElementById('auth-confirm').classList.toggle('hidden', !isSignup);
+  document.getElementById('gender-select').classList.toggle('hidden', !isSignup);
+  document.getElementById('auth-submit').textContent = isSignup ? 'Create Account' : 'Log In';
+  document.getElementById('auth-error').classList.add('hidden');
+}
+
+document.querySelectorAll('.auth-tab').forEach(btn =>
+  btn.addEventListener('click', () => setAuthMode(btn.dataset.mode))
+);
+
+document.querySelectorAll('.gender-btn').forEach(btn =>
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedGender = btn.dataset.gender;
+  })
+);
+
+function showAuthError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.classList.remove('hidden');
+}
+
+async function createAccount() {
+  const username = document.getElementById('auth-username').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const confirm  = document.getElementById('auth-confirm').value;
+
+  if (!username)           { showAuthError('Enter a username.');                    return; }
+  if (username.length < 3) { showAuthError('Username must be at least 3 characters.'); return; }
+  if (!password)           { showAuthError('Enter a password.');                    return; }
+  if (password.length < 6) { showAuthError('Password must be at least 6 characters.'); return; }
+  if (password !== confirm) { showAuthError("Passwords don't match.");               return; }
+
+  const btn = document.getElementById('auth-submit');
   btn.disabled = true;
   btn.textContent = 'Creating…';
+
+  const { data: existing } = await db.from('players').select('player_id').eq('username', username).maybeSingle();
+  if (existing) {
+    showAuthError('Username already taken.');
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+    return;
+  }
 
   let playerId, attempts = 0;
   while (attempts < 10) {
@@ -83,70 +135,72 @@ async function createAccount() {
     attempts++;
   }
 
-  const { error } = await db.from('players').insert({ player_id: playerId, username, coins: 100, gems: 0 });
+  const { error } = await db.from('players').insert({
+    player_id: playerId,
+    username,
+    password: await hashPassword(password),
+    gender: selectedGender,
+    coins: 100,
+    gems: 0,
+  });
+
   if (error) {
+    showAuthError('Something went wrong. Try again.');
     btn.disabled = false;
     btn.textContent = 'Create Account';
     return;
   }
 
   localStorage.setItem(PLAYER_ID_KEY, playerId);
-  showNewIdModal(playerId, username);
-
-  btn.disabled = false;
-  btn.textContent = 'Create Account';
+  await loadPlayer(playerId);
 }
-
-function showNewIdModal(id, username) {
-  document.getElementById('nid-welcome').textContent = `Welcome, ${username}! 🎉`;
-  document.getElementById('nid-id').textContent = id;
-  document.getElementById('new-id-modal').classList.remove('hidden');
-}
-
-document.getElementById('nid-copy').addEventListener('click', () => {
-  navigator.clipboard.writeText(document.getElementById('nid-id').textContent).catch(() => {});
-  document.getElementById('nid-copy').textContent = '✅ Copied!';
-  setTimeout(() => { document.getElementById('nid-copy').textContent = '📋 Copy ID'; }, 2000);
-});
-
-document.getElementById('nid-go').addEventListener('click', () => {
-  document.getElementById('new-id-modal').classList.add('hidden');
-  loadPlayer(localStorage.getItem(PLAYER_ID_KEY));
-});
 
 async function signIn() {
-  const raw = document.getElementById('return-id').value.trim().toUpperCase();
-  const id  = raw.startsWith('#') ? raw : '#' + raw;
-  const err = document.getElementById('signin-error');
-  err.classList.add('hidden');
+  const username = document.getElementById('auth-username').value.trim();
+  const password = document.getElementById('auth-password').value;
 
-  const btn = document.getElementById('signin-btn');
+  if (!username || !password) { showAuthError('Fill in all fields.'); return; }
+
+  const btn = document.getElementById('auth-submit');
   btn.disabled = true;
   btn.textContent = 'Signing in…';
 
-  const { data, error } = await db.from('players').select('*').eq('player_id', id).maybeSingle();
+  const { data, error } = await db.from('players')
+    .select('*')
+    .eq('username', username)
+    .eq('password', await hashPassword(password))
+    .maybeSingle();
 
   btn.disabled = false;
-  btn.textContent = 'Sign In';
+  btn.textContent = 'Log In';
 
-  if (error || !data) {
-    err.classList.remove('hidden');
-    return;
-  }
+  if (error || !data) { showAuthError('Invalid username or password.'); return; }
 
-  localStorage.setItem(PLAYER_ID_KEY, id);
-  loadPlayer(id);
+  localStorage.setItem(PLAYER_ID_KEY, data.player_id);
+  await loadPlayer(data.player_id);
 }
+
+document.getElementById('auth-submit').addEventListener('click', () => {
+  if (authMode === 'login') signIn();
+  else createAccount();
+});
+
+['auth-username', 'auth-password', 'auth-confirm'].forEach(id =>
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('auth-submit').click();
+  })
+);
 
 async function loadPlayer(id) {
   const { data: p } = await db.from('players').select('*').eq('player_id', id).maybeSingle();
-  if (!p) { localStorage.removeItem(PLAYER_ID_KEY); return; }
+  if (!p) { localStorage.removeItem(PLAYER_ID_KEY); showScreen('login-screen'); return; }
 
   player.id       = p.player_id;
   player.username = p.username;
   player.coins    = p.coins;
   player.gems     = p.gems;
-  player.wins     = p.wins || 0;
+  player.wins     = p.wins   || 0;
+  player.gender   = p.gender || 'prefer_not_to_say';
 
   const { data: towers } = await db.from('owned_towers').select('tower_id').eq('player_id', id);
   player.ownedTowers = new Set((towers || []).map(r => r.tower_id));
@@ -158,23 +212,10 @@ async function loadPlayer(id) {
   renderShopTab();
 }
 
-document.getElementById('create-btn').addEventListener('click', createAccount);
-document.getElementById('signin-btn').addEventListener('click', signIn);
-
-document.getElementById('new-username').addEventListener('keydown', e => {
-  if (e.key === 'Enter') createAccount();
-});
-document.getElementById('return-id').addEventListener('keydown', e => {
-  if (e.key === 'Enter') signIn();
-});
-
 async function init() {
   const saved = localStorage.getItem(PLAYER_ID_KEY);
-  if (saved) {
-    await loadPlayer(saved);
-  } else {
-    showScreen('login-screen');
-  }
+  if (saved) await loadPlayer(saved);
+  else showScreen('login-screen');
 }
 
 // ── Currency display ──────────────────────────────────────────────────────────
@@ -342,10 +383,11 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   player.ownedTowers = new Set();
   document.getElementById('settings-modal').classList.add('hidden');
   document.getElementById('profile-btn').textContent = '😊 Profile';
+  document.getElementById('auth-username').value = '';
+  document.getElementById('auth-password').value = '';
+  document.getElementById('auth-confirm').value  = '';
+  setAuthMode('login');
   showScreen('login-screen');
-  document.getElementById('new-username').value = '';
-  document.getElementById('return-id').value    = '';
-  document.getElementById('signin-error').classList.add('hidden');
 });
 
 // ── Profile modal ─────────────────────────────────────────────────────────────

@@ -67,15 +67,15 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
   width: 100%;
-  max-width: 400px;
+  max-width: 380px;
   position: relative;
   z-index: 2;
 }
 
 #login-hero {
-  font-size: clamp(4rem, 14vw, 6rem);
+  font-size: clamp(3.5rem, 12vw, 5.5rem);
   line-height: 1;
   animation: float 3.2s ease-in-out infinite;
   filter: drop-shadow(0 0 24px rgba(255,200,60,0.5)) drop-shadow(0 8px 16px rgba(0,0,0,0.5));
@@ -83,7 +83,7 @@ html, body {
 
 #login-title {
   font-family: 'Lilita One', cursive;
-  font-size: clamp(1.6rem, 5.5vw, 2.4rem);
+  font-size: clamp(1.5rem, 5vw, 2.2rem);
   font-weight: 400;
   color: #fff;
   text-shadow: 0 4px 0 rgba(0,0,0,0.5), 0 0 40px rgba(255,200,60,0.35);
@@ -91,37 +91,56 @@ html, body {
   text-align: center;
 }
 
-.login-card {
+/* ── Mode toggle ── */
+#auth-toggle {
+  display: flex;
   width: 100%;
-  background: rgba(255,255,255,0.07);
-  border: 2px solid rgba(255,255,255,0.14);
+  background: rgba(0,0,0,0.35);
+  border: 2px solid rgba(255,255,255,0.1);
+  border-radius: 100px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 100px;
+  background: none;
+  color: rgba(255,255,255,0.4);
+  font-family: 'Nunito', sans-serif;
+  font-weight: 800;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  letter-spacing: 0.02em;
+}
+.auth-tab.active {
+  background: linear-gradient(180deg, #ffd43b 0%, #f59f00 100%);
+  color: #7d3f00;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+/* ── Auth card ── */
+#auth-card {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(255,255,255,0.12);
   border-radius: 22px;
   padding: 20px 18px;
   display: flex;
   flex-direction: column;
   gap: 10px;
   backdrop-filter: blur(14px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
-.login-card-title {
-  font-family: 'Lilita One', cursive;
-  font-size: 1.05rem;
-  font-weight: 400;
-  color: #ffd43b;
-  text-shadow: 0 2px 0 rgba(0,0,0,0.4);
-}
-
-.login-card-sub {
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.5);
-  margin-top: -4px;
-}
-
+/* ── Shared input + button styles ── */
 .login-input {
   width: 100%;
   padding: 12px 14px;
-  border: 2px solid rgba(255,255,255,0.16);
+  border: 2px solid rgba(255,255,255,0.14);
   border-radius: 12px;
   font-size: 0.95rem;
   font-family: 'Nunito', sans-serif;
@@ -133,9 +152,9 @@ html, body {
 }
 .login-input:focus {
   border-color: #ffd43b;
-  box-shadow: 0 0 0 3px rgba(255,212,59,0.18);
+  box-shadow: 0 0 0 3px rgba(255,212,59,0.16);
 }
-.login-input::placeholder { color: rgba(255,255,255,0.28); }
+.login-input::placeholder { color: rgba(255,255,255,0.26); }
 
 .login-btn {
   width: 100%;
@@ -153,125 +172,57 @@ html, body {
   letter-spacing: 0.02em;
 }
 .login-btn:hover  { transform: translateY(-2px); box-shadow: 0 7px 0 #b86d00, 0 10px 24px rgba(255,160,0,0.35); }
-.login-btn:active { transform: translateY(4px);  box-shadow: 0 1px 0 #b86d00, 0 4px 10px rgba(255,160,0,0.2); }
-
-.login-btn-blue {
-  background: linear-gradient(180deg, #74c0fc 0%, #339af0 100%);
-  color: #003566;
-  box-shadow: 0 5px 0 #1864ab, 0 8px 20px rgba(51,154,240,0.3);
-}
-.login-btn-blue:hover  { transform: translateY(-2px); box-shadow: 0 7px 0 #1864ab, 0 10px 24px rgba(51,154,240,0.35); }
-.login-btn-blue:active { transform: translateY(4px);  box-shadow: 0 1px 0 #1864ab; }
-
-.login-divider {
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: rgba(255,255,255,0.35);
-  position: relative;
-  width: 100%;
-  text-align: center;
-}
-.login-divider::before, .login-divider::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  width: calc(50% - 22px);
-  height: 1px;
-  background: rgba(255,255,255,0.14);
-}
-.login-divider::before { left: 0; }
-.login-divider::after  { right: 0; }
+.login-btn:active { transform: translateY(4px);  box-shadow: 0 1px 0 #b86d00; }
+.login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 
 .login-error {
   font-size: 0.8rem;
   font-weight: 700;
   color: #ff8787;
   text-align: center;
+  padding: 0 2px;
 }
 .login-error.hidden { display: none; }
 
-/* ── New-ID modal ── */
-#new-id-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 300;
-}
-#new-id-modal.hidden { display: none; }
-
-#new-id-box {
-  background: linear-gradient(160deg, #1a1535 0%, #111228 100%);
-  border: 2px solid rgba(255,255,255,0.12);
-  border-radius: 26px;
-  padding: 34px 26px;
-  text-align: center;
-  width: min(340px, 92vw);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
-  animation: modal-pop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-#nid-welcome {
-  font-family: 'Lilita One', cursive;
-  font-size: 1.1rem;
-  color: #ffd43b;
-  text-shadow: 0 2px 0 rgba(0,0,0,0.4);
-}
-
-.nid-label {
+/* ── Gender selection ── */
+.gender-label {
   font-size: 0.72rem;
-  font-weight: 700;
-  color: rgba(255,255,255,0.4);
+  font-weight: 800;
+  color: rgba(255,255,255,0.38);
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  margin-top: 4px;
+  margin-bottom: 2px;
 }
 
-#nid-id {
-  font-family: 'Lilita One', cursive;
-  font-size: 1.7rem;
-  color: #74c0fc;
-  letter-spacing: 0.06em;
-  background: rgba(29,78,216,0.2);
-  border-radius: 14px;
-  padding: 10px 20px;
-  border: 2px solid rgba(116,192,252,0.4);
-  width: 100%;
-  text-shadow: 0 0 20px rgba(116,192,252,0.5);
+#gender-btns {
+  display: flex;
+  gap: 6px;
 }
 
-.nid-warn {
-  font-size: 0.78rem;
-  color: #ff8787;
-  font-weight: 700;
-  background: rgba(200,42,42,0.15);
-  border: 1px solid rgba(255,100,100,0.3);
-  border-radius: 10px;
-  padding: 8px 12px;
-  width: 100%;
-}
-
-#nid-copy {
-  width: 100%;
-  padding: 11px;
-  border: 2px solid rgba(255,255,255,0.18);
+.gender-btn {
+  flex: 1;
+  padding: 9px 4px;
+  border: 2px solid rgba(255,255,255,0.12);
   border-radius: 100px;
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.8);
-  font-weight: 700;
-  font-size: 0.9rem;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.45);
   font-family: 'Nunito', sans-serif;
+  font-weight: 700;
+  font-size: 0.76rem;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.14s, color 0.14s, border-color 0.14s;
+  text-align: center;
+  white-space: nowrap;
 }
-#nid-copy:hover { background: rgba(255,255,255,0.14); }
+.gender-btn:hover {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.75);
+}
+.gender-btn.active {
+  background: rgba(255,212,59,0.14);
+  border-color: rgba(255,212,59,0.6);
+  color: #ffd43b;
+}
 
 
 /* ══════════════════════════════════════════════════════════════════════════════

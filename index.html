@@ -20,34 +20,28 @@
       <div id="login-hero">🏰</div>
       <h1 id="login-title">Defend the Darrens</h1>
 
-      <div class="login-card" id="login-new">
-        <h2 class="login-card-title">New Player</h2>
-        <p class="login-card-sub">Pick a username and get your ID</p>
-        <input id="new-username" class="login-input" type="text" maxlength="20" placeholder="Enter username…" autocomplete="off" spellcheck="false">
-        <button id="create-btn" class="login-btn">Create Account</button>
+      <div id="auth-toggle">
+        <button class="auth-tab active" data-mode="login">Log In</button>
+        <button class="auth-tab" data-mode="signup">Sign Up</button>
       </div>
 
-      <div class="login-divider">or</div>
+      <div id="auth-card">
+        <input id="auth-username" class="login-input" type="text" maxlength="20" placeholder="Username" autocomplete="off" spellcheck="false">
+        <input id="auth-password" class="login-input" type="password" maxlength="64" placeholder="Password" autocomplete="off">
+        <input id="auth-confirm"  class="login-input hidden" type="password" maxlength="64" placeholder="Confirm Password" autocomplete="off">
 
-      <div class="login-card" id="login-returning">
-        <h2 class="login-card-title">Returning Player</h2>
-        <p class="login-card-sub">Sign in with your player ID</p>
-        <input id="return-id" class="login-input" type="text" maxlength="11" placeholder="#XXXXXXXXXX" autocomplete="off" spellcheck="false">
-        <button id="signin-btn" class="login-btn login-btn-blue">Sign In</button>
-        <p id="signin-error" class="login-error hidden">Player ID not found.</p>
+        <div id="gender-select" class="hidden">
+          <p class="gender-label">I am…</p>
+          <div id="gender-btns">
+            <button class="gender-btn" data-gender="male">Male</button>
+            <button class="gender-btn" data-gender="female">Female</button>
+            <button class="gender-btn active" data-gender="prefer_not_to_say">Prefer not to say</button>
+          </div>
+        </div>
+
+        <p id="auth-error" class="login-error hidden"></p>
+        <button id="auth-submit" class="login-btn">Log In</button>
       </div>
-    </div>
-  </div>
-
-  <!-- New-ID reveal modal -->
-  <div id="new-id-modal" class="hidden">
-    <div id="new-id-box">
-      <p id="nid-welcome"></p>
-      <p class="nid-label">Your Player ID</p>
-      <div id="nid-id"></div>
-      <p class="nid-warn">⚠️ Save this ID — it's the only way to log back in!</p>
-      <button id="nid-copy">📋 Copy ID</button>
-      <button id="nid-go" class="login-btn">Let's Go!</button>
     </div>
   </div>
 
@@ -144,7 +138,7 @@
       <h2 class="settings-title">⚙️ Settings</h2>
       <button id="logout-btn" class="settings-row danger">🚪 Log Out</button>
       <button id="settings-close" class="settings-close-btn">Cancel</button>
-      <p class="settings-version">v1.1.0</p>
+      <p class="settings-version">v1.2.0</p>
     </div>
   </div>
 
