@@ -262,8 +262,9 @@ document.getElementById('auth-card').addEventListener('click', e => {
 });
 
 async function loadPlayer(id) {
-  const { data: p } = await db.from('players').select('*').eq('player_id', id).maybeSingle();
-  if (!p) { localStorage.removeItem(PLAYER_ID_KEY); showScreen('login-screen'); return; }
+  const { data: p, error } = await db.from('players').select('*').eq('player_id', id).maybeSingle();
+  if (error) { showScreen('login-screen'); return; }
+  if (!p)    { localStorage.removeItem(PLAYER_ID_KEY); showScreen('login-screen'); return; }
 
   player.id       = p.player_id;
   player.username = p.username;
