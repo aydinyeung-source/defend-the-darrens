@@ -357,13 +357,6 @@ html, body {
   letter-spacing: 0.01em;
 }
 
-#hero-sub {
-  font-size: clamp(0.8rem, 2.4vw, 0.95rem);
-  color: rgba(255,255,255,0.55);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
 #play-btn {
   margin-top: 8px;
   background: linear-gradient(180deg, #ffd43b 0%, #f59f00 100%);
@@ -403,10 +396,13 @@ html, body {
 /* ── Bottom nav ── */
 #sel-nav {
   display: flex;
+  align-items: flex-end;
+  overflow: visible;
   background: rgba(8,6,20,0.88);
   border-top: 2px solid rgba(255,255,255,0.08);
   backdrop-filter: blur(24px);
   padding-bottom: env(safe-area-inset-bottom);
+  min-height: 60px;
   position: relative;
   z-index: 2;
   box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
@@ -441,16 +437,37 @@ html, body {
 .nav-btn.active .nav-icon { transform: scale(1.18); }
 .nav-label { letter-spacing: 0.04em; text-transform: uppercase; font-size: 0.62rem; }
 
-.nav-pip {
-  display: none;
-  width: 5px; height: 5px;
+/* ── CR-style elevated centre Battle button ── */
+.nav-btn[data-pane="play"] {
+  position: relative;
+  bottom: 16px;
+  flex-shrink: 0;
+  width: 66px;
+  height: 66px;
+  min-width: 66px;
+  padding: 0;
+  gap: 0;
   border-radius: 50%;
-  background: #ffd43b;
-  position: absolute;
-  top: 7px;
-  box-shadow: 0 0 6px #ffd43b;
+  background: linear-gradient(180deg, #ffd43b 0%, #f59f00 100%);
+  border: 3px solid rgba(255,230,100,0.65);
+  color: #7d3f00;
+  box-shadow: 0 6px 0 #b86d00, 0 10px 28px rgba(255,160,0,0.45), inset 0 2px 0 rgba(255,255,255,0.28);
+  transition: transform 0.1s, box-shadow 0.1s;
 }
-.nav-btn.active .nav-pip { display: block; }
+.nav-btn[data-pane="play"]:hover {
+  color: #7d3f00;
+  transform: translateY(-3px);
+  box-shadow: 0 9px 0 #b86d00, 0 14px 32px rgba(255,160,0,0.5), inset 0 2px 0 rgba(255,255,255,0.28);
+}
+.nav-btn[data-pane="play"]:active {
+  transform: translateY(4px);
+  box-shadow: 0 2px 0 #b86d00, 0 4px 10px rgba(255,160,0,0.25), inset 0 2px 0 rgba(255,255,255,0.2);
+}
+.nav-btn[data-pane="play"].active {
+  color: #7d3f00;
+}
+.nav-btn[data-pane="play"] .nav-icon { font-size: 1.85rem; }
+.nav-btn[data-pane="play"].active .nav-icon { transform: scale(1.06); }
 
 
 /* ══════════════════════════════════════════════════════════════════════════════
